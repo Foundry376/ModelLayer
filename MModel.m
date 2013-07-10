@@ -148,14 +148,24 @@
     MAPITransaction * t = [MAPITransaction transactionForPerforming:TRANSACTION_SAVE of:self];
     if (callback) [t setCallback: callback];
     [[MAPIClient shared] queueAPITransaction: t];
-    
+}
+
+- (void)reload:(MAPITransactionCallback)callback
+{
+    [[MAPIClient shared] getModelAtPath:[self resourcePath] userTriggered:NO success:^(id responseObject) {
+        [self updateWithResourceJSON: responseObject];
+        if (callback) callback(YES);
+        
+    } failure:^(NSError *err) {
+        if (callback) callback(NO);
+    }];
 }
 
 # pragma mark Getting and Setting Resource Properties
 
 + (NSMutableDictionary *)resourceKeysForPropertyKeys
 {
-    return [@{ @"ID": @"id", @"createdAt": @"created_at" } mutableCopy];
+    return [@{ @"ID": @"id", @"createdAt": @"created_at", @"updatedAt": @"updated_at" } mutableCopy];
 }
 
 - (void)getEachPropertyInSet:(NSArray*)properties andInvoke:(void (^)(id key, NSString * type, id value))block

@@ -8,6 +8,7 @@
 
 #import "NSString+FormatConversion.h"
 #import <CommonCrypto/CommonDigest.h>
+#import <CoreText/CoreText.h>
 
 static NSMutableDictionary * formatters;
 
@@ -100,10 +101,40 @@ static NSMutableDictionary * formatters;
     
     NSData * data = [self dataUsingEncoding: NSUTF8StringEncoding];
     id obj = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:NULL];
-    if ([obj isKindOfClass: class])
+    if ([obj isKindOfClass: klass])
         return obj;
     else
         return nil;
+}
+
+- (NSAttributedString*)attributedTextWithFont:(UIFont*)font andColor:(UIColor*)color andLineSpacing:(int)lineSpacing
+{
+    NSMutableAttributedString * attributed = [[NSMutableAttributedString alloc] initWithString: self];
+    NSMutableParagraphStyle *style = [[NSMutableParagraphStyle alloc] init];
+    NSRange all = NSMakeRange(0, [attributed length]);
+    [style setLineBreakMode: NSLineBreakByWordWrapping];
+    [style setLineSpacing: lineSpacing];
+    [attributed addAttribute:NSFontAttributeName value:font range:all];
+    [attributed addAttribute:NSForegroundColorAttributeName value:color range:all];
+    [attributed addAttribute:NSParagraphStyleAttributeName value:style range: all];
+    
+    return attributed;
+}
+
+@end
+
+@implementation NSAttributedString (FormatConversion)
+
+- (float)heightConstrainedToWidth:(float)width
+{
+    if ([self length] == 0)
+        return 0;
+    
+    CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)self);
+    CGSize targetSize = CGSizeMake(width, CGFLOAT_MAX);
+    CGSize size = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, [self length]), NULL, targetSize, NULL);
+    CFRelease(framesetter);
+    return size.height+5;
 }
 
 @end

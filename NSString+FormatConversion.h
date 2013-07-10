@@ -21,6 +21,12 @@
 - (CGSize)CGSizeValue;
 
 - (id)asJSONObjectOfClass:(Class)klass;
+- (NSAttributedString*)attributedTextWithFont:(UIFont*)font andColor:(UIColor*)color andLineSpacing:(int)lineSpacing;
 
+@end
+
+@interface NSAttributedString (FormatConversion)
+
+- (float)heightConstrainedToWidth:(float)width;
 
 @end

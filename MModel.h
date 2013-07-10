@@ -24,6 +24,7 @@ typedef enum SaveState {
 
 @property (nonatomic, strong) NSString * ID;
 @property (nonatomic, strong) NSDate * createdAt;
+@property (nonatomic, strong) NSDate * updatedAt;
 @property (atomic, assign) SaveState state;
 @property (atomic, weak) NSObject<MRestfulObject> * parent;
 
@@ -45,6 +46,7 @@ typedef enum SaveState {
 - (void)updateWithResourceJSON:(NSDictionary*)json;
 
 - (void)save:(MAPITransactionCallback)callback;
+- (void)reload:(MAPITransactionCallback)callback;
 
 
 @end
