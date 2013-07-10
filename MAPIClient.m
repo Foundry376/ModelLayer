@@ -11,7 +11,6 @@
 
 #define PATH_ACTIONS_STATE [@"~/Documents/Actions2.plist" stringByExpandingTildeInPath]
 #define PATH_USER_STATE    [@"~/Documents/User2.plist" stringByExpandingTildeInPath]
-#define BASE_URL            @"https://localhost:4430/api/v0"
 
 @implementation MAPIClient
 
@@ -48,11 +47,6 @@
         } @catch (NSException * e) {
             NSLog(@"%@", [e description]);
         }
-        
-        if (_user.thirdPartyToken)
-            [self setAuthorizationHeaderWithUsername: @"facebook" password: _user.thirdPartyToken];
-        else
-            _user = nil;
         
         if (!_transactionsQueue)
             _transactionsQueue = [NSMutableArray array];
@@ -115,8 +109,8 @@
 
 - (void)requestPath:(NSString*)path withMethod:(NSString*)method withParameters: params userTriggered:(BOOL)triggered expectedClass:(Class)expectation success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback
 {
-    NSURLRequest *request = [[MAPIClient shared] requestWithMethod:method path:path parameters:params];
-    AFHTTPRequestOperation *operation = [[MAPIClient shared] HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    NSURLRequest *request = [self requestWithMethod:method path:path parameters:params];
+    AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (expectation && ([responseObject isKindOfClass: expectation] == NO)) {
             NSError * err = [NSError errorWithExpectationFailure: [responseObject class]];
             if (triggered)
@@ -134,32 +128,17 @@
             failureCallback(err);
     }];
     
-    [[MAPIClient shared] enqueueHTTPRequestOperation:operation];
+    [self enqueueHTTPRequestOperation:operation];
 }
 
-- (void)setUser:(BAUser *)user
+- (void)setUser:(MUser *)user
 {
     _user = user;
+    if (user == nil)
+        [self clearAuthorizationHeader];
+    
     [self updateDiskCache: YES];
     [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_USER_CHANGED object:nil];
-    
-}
-- (void)authenticateWithToken:(NSString*)accessToken
-{
-    if (accessToken) {
-        [self setAuthorizationHeaderWithUsername: @"facebook" password: accessToken];
-        [self getModelAtPath:@"users/me" userTriggered:YES success:^(id responseObject){
-            self.user = [[BAUser alloc] initWithDictionary: responseObject];
-            self.user.thirdPartyToken = accessToken;
-            
-        } failure:^(NSError *err) {
-            [self clearAuthorizationHeader];
-            self.user = nil;
-        }];
-    } else {
-        [self clearAuthorizationHeader];
-        self.user = nil;
-    }
 }
 
 #pragma mark Tracking API Access and Recovering from Offline State

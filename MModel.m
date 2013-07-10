@@ -8,6 +8,7 @@
 
 #import "MModel.h"
 #import "MAPIClient.h"
+#import "MModelCollection.h"
 #import "NSObject+Properties.h"
 #import "NSString+FormatConversion.h"
 

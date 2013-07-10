@@ -6,7 +6,7 @@
 //  Copyright (c) 2013 Bloganizer Inc. All rights reserved.
 //
 
-#import "BAUser.h"
+#import "MUser.h"
 
 #define NOTIF_USER_CHANGED          @"m_user_changed"
 #define NOTIF_COLLECTION_CHANGED    @"m_collection_changed"
@@ -23,7 +23,7 @@
     
 }
 
-@property (nonatomic, retain) BAUser * user;
+@property (nonatomic, retain) MUser * user;
 
 + (MAPIClient *)shared;
 
