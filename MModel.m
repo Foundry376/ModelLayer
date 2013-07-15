@@ -60,6 +60,11 @@
     
 }
 
+- (NSComparisonResult)sort:(MModel*)other
+{
+    return [[self createdAt] compare: [other createdAt]];
+}
+
 - (BOOL)isSaved
 {
     return [self ID] != nil;
@@ -134,7 +139,7 @@
         
         } else if ([type isEqualToString: @"T@\"MModelCollection\""]) {
             MModelCollection * collection = (MModelCollection *)*value;
-            [collection updateWithResourceJSON: [json objectForKey: jsonKey]];
+            [collection updateWithResourceJSON: [json objectForKey: jsonKey] discardMissingModels: YES];
             [collection setRefreshDate: [NSDate date]];
             
         } else {
@@ -142,6 +147,8 @@
         }
         return YES;
     }];
+
+    [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_MODEL_CHANGED object:self];
 }
 
 - (void)save:(MAPITransactionCallback)callback
@@ -204,6 +211,8 @@
             } else {
                 if ([type isEqualToString: @"T@\"NSString\""] && [value isKindOfClass: [NSNumber class]])
                     value = [(NSNumber*)value stringValue];
+                if ([type isEqualToString: @"Tc"] && [value isKindOfClass: [NSString class]])
+                    value = [NSNumber numberWithChar: [(NSString*)value characterAtIndex: 0]];
                 [self setValue:value forKey:key];
             }
         }

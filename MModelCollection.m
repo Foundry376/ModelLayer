@@ -119,12 +119,15 @@
     [self removeItemAtIndex: [[self all] indexOfObject: [self objectWithID: ID]]];
 }
 
-- (void)updateWithResourceJSON:(NSArray*)jsons
+- (void)updateWithResourceJSON:(NSArray*)jsons discardMissingModels:(BOOL)discardMissing
 {
     NSMutableArray * unused = [NSMutableArray arrayWithArray: _cache];
     
     for (NSDictionary * json in jsons) {
-        NSString * ID = [[json objectForKey: @"id"] stringValue];
+        NSString * ID = [json objectForKey: @"id"];
+        if ([ID isKindOfClass: [NSString class]] == NO)
+            ID = [(NSNumber*)ID stringValue];
+
         MModel * existing = nil;
         for (MModel * obj in unused) {
             if ([[obj ID] isEqualToString: ID]) {
@@ -143,20 +146,37 @@
         }
     }
     
-    [unused makeObjectsPerformSelector:@selector(setParent:) withObject: nil];
-    [_cache removeObjectsInArray: unused];
+    if (discardMissing) {
+        [unused makeObjectsPerformSelector:@selector(setParent:) withObject: nil];
+        [_cache removeObjectsInArray: unused];
+    }
     
-    
-// sort the items using their createdAt date
-// TODO REVISIT AND MAKE A MODEL METHOD
-//            [__cache sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-//                if ([obj1 displayOrder] < [obj2 displayOrder])
-//                    return NSOrderedAscending;
-//                else if ([obj1 displayOrder] > [obj2 displayOrder])
-//                    return NSOrderedDescending;
-//                return NSOrderedSame;
-//            }];
+    [_cache sortUsingSelector: @selector(sort:)];
 }
+
+- (void)updateFromPath:(NSString*)path replaceExistingContents:(BOOL)replace
+{
+    if (_refreshInProgress)
+        return;
+    
+    _refreshInProgress = YES;
+
+    [[MAPIClient shared] getCollectionAtPath:path userTriggered:NO success:^(id responseObject) {
+        _loadReturnedZero = ([responseObject count] == 0);
+        [self updateWithResourceJSON: responseObject discardMissingModels: replace];
+        [self setRefreshDate: [NSDate date]];
+        [[MAPIClient shared] updateDiskCache: NO];
+        _refreshInProgress = NO;
+        [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_COLLECTION_CHANGED object:self];
+        
+    } failure:^(NSError *err) {
+        [self setRefreshDate: [NSDate date]];
+        _refreshInProgress = NO;
+        _loadReturnedZero = NO;
+        [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_COLLECTION_CHANGED object:self];
+    }];
+}
+
 
 - (NSArray*)all
 {
@@ -171,23 +191,7 @@
 
 - (void)refresh
 {
-    if (_refreshInProgress)
-        return;
-    
-    _refreshInProgress = YES;
-
-    [[MAPIClient shared] getCollectionAtPath:[self resourcePath] userTriggered:NO success:^(id responseObject) {
-        [self updateWithResourceJSON: responseObject];
-        [self setRefreshDate: [NSDate date]];
-        [[MAPIClient shared] updateDiskCache: NO];
-        _refreshInProgress = NO;
-        [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_COLLECTION_CHANGED object:self];
-
-    } failure:^(NSError *err) {
-        [self setRefreshDate: [NSDate date]];
-        _refreshInProgress = NO;
-        [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_COLLECTION_CHANGED object:self];
-    }];
+    [self updateFromPath:[self resourcePath] replaceExistingContents:YES];
 }
 
 - (void)refreshIfOld
@@ -195,6 +199,16 @@
     BOOL expired = (!_refreshDate || ([_refreshDate timeIntervalSinceNow] > 5000));
     if (expired)
         [self refresh];
+}
+
+- (void)loadMore
+{
+    if (_loadReturnedZero)
+        return;
+    
+    int page = floorf([[self all] count] / 10.0) + 1;
+    NSString * path = [[self resourcePath] stringByAppendingFormat:@"?page=%d", page];
+    [self updateFromPath: path replaceExistingContents:NO];
 }
 
 

@@ -25,4 +25,16 @@
 	return objc_getAssociatedObject(self, key);
 }
 
+- (void)performSelectorOnMainThreadOnce:(SEL)selector
+{
+    [self associateValue:[NSNumber numberWithBool: YES] withKey: (void*)selector];
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if ([self associatedValueForKey: (void*)selector]) {
+            [self performSelector: selector];
+            [self associateValue:nil withKey:(void*)selector];
+        }
+    });
+}
+
 @end

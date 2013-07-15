@@ -10,10 +10,8 @@
 
 #define NOTIF_USER_CHANGED          @"m_user_changed"
 #define NOTIF_COLLECTION_CHANGED    @"m_collection_changed"
+#define NOTIF_MODEL_CHANGED         @"m_model_changed"
 #define NOTIF_API_QUEUE_CHANGED     @"m_api_queue_changed"
-
-#define API_TIMESTAMP_FORMAT @"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-
 
 @interface MAPIClient : AFHTTPClient
 {
@@ -36,8 +34,6 @@
 - (void)getModelAtPath:(NSString*)path userTriggered:(BOOL)triggered success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback;
 - (void)getCollectionAtPath:(NSString*)path userTriggered:(BOOL)triggered success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback;
 - (void)requestPath:(NSString*)path withMethod:(NSString*)method withParameters: params userTriggered:(BOOL)triggered expectedClass:(Class)expectation success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback;
-
-- (void)authenticateWithToken:(NSString*)accessToken;
 
 
 #pragma mark Tracking API Access and Recovering from Offline State

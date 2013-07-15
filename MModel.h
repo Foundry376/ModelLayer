@@ -37,6 +37,8 @@ typedef enum SaveState {
 
 - (void)setup;
 
+- (NSComparisonResult)sort:(MModel*)other;
+
 - (NSString*)ID;
 - (BOOL)isSaved;
 - (BOOL)isUnsaved;

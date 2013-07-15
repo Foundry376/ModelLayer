@@ -19,7 +19,7 @@
     static MAPIClient * sharedClient = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        sharedClient = [[MAPIClient alloc] initWithBaseURL:[NSURL URLWithString: BASE_URL]];
+        sharedClient = [[MAPIClient alloc] initWithBaseURL:[NSURL URLWithString: API_ROOT]];
     });
     return sharedClient;
 }
@@ -236,6 +236,9 @@
         NSDictionary * json = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingAllowFragments error:NULL];
         if (json) message = [json objectForKey: @"error"];
     }
+    
+    if ([err code] == 401)
+        message = @"Please check your email address and password.";
 
     if (message)
         [[[UIAlertView alloc] initWithTitle:@"Error" message:message delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] show];

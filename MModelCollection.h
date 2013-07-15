@@ -15,6 +15,7 @@
 @interface MModelCollection : NSObject <NSCoding, MRestfulObject>
 {
     NSMutableArray * _cache;
+    BOOL _loadReturnedZero;
 }
 
 @property (nonatomic, strong) NSString * collectionName;
@@ -42,7 +43,8 @@
 - (void)removeItemAtIndex:(NSUInteger)i;
 - (void)removeItemWithID:(NSString*)ID;
 
-- (void)updateWithResourceJSON:(NSArray*)jsons;
+- (void)updateWithResourceJSON:(NSArray*)jsons discardMissingModels:(BOOL)discardMissing;
+- (void)updateFromPath:(NSString*)path replaceExistingContents:(BOOL)replace;
 
 - (NSArray*)all;
 - (int)count;
@@ -50,7 +52,6 @@
 - (void)refresh;
 - (void)refreshIfOld;
 
-
-
+- (void)loadMore;
 
 @end
