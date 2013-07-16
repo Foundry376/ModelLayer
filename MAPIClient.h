@@ -19,6 +19,7 @@
     BOOL _hasDisplayedDisconnectionNotice;
     BOOL _updateDiskCacheTriggered;
     
+    NSMutableDictionary * _globalObjectStore;
 }
 
 @property (nonatomic, retain) MUser * user;
@@ -35,6 +36,8 @@
 - (void)getCollectionAtPath:(NSString*)path userTriggered:(BOOL)triggered success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback;
 - (void)requestPath:(NSString*)path withMethod:(NSString*)method withParameters: params userTriggered:(BOOL)triggered expectedClass:(Class)expectation success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback;
 
+- (MModel*)globalObjectWithID:(NSString*)ID ofClass:(Class)type;
+- (void)addGlobalObject:(MModel*)model;
 
 #pragma mark Tracking API Access and Recovering from Offline State
 

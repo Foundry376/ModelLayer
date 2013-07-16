@@ -10,7 +10,7 @@
 #import "NSError+MErrors.h"
 
 #define PATH_ACTIONS_STATE [@"~/Documents/Actions2.plist" stringByExpandingTildeInPath]
-#define PATH_USER_STATE    [@"~/Documents/User2.plist" stringByExpandingTildeInPath]
+#define PATH_STORE_STATE    [@"~/Documents/Store2.plist" stringByExpandingTildeInPath]
 
 @implementation MAPIClient
 
@@ -31,16 +31,19 @@
         [self registerHTTPOperationClass: [AFJSONRequestOperation class]];
         [self setDefaultHeader:@"Accept" value:@"application/json"];
         [self setAllowsInvalidSSLCertificate: YES];
-        
+
         typeof(self) __weak __self = self;
         [self setReachabilityStatusChangeBlock:^(AFNetworkReachabilityStatus status) {
             [__self apiReachabilityChanged: status];
         }];
 
         @try {
-            if ([[NSFileManager defaultManager] fileExistsAtPath: PATH_USER_STATE])
-                _user = [NSKeyedUnarchiver unarchiveObjectWithFile: PATH_USER_STATE];
-
+            if ([[NSFileManager defaultManager] fileExistsAtPath: PATH_STORE_STATE]) {
+                NSDictionary * dict = [NSKeyedUnarchiver unarchiveObjectWithFile: PATH_STORE_STATE];
+                _globalObjectStore = [dict objectForKey:@"objectStore"];
+                _user = [dict objectForKey:@"user"];
+            }
+            
             if ([[NSFileManager defaultManager] fileExistsAtPath: PATH_ACTIONS_STATE])
                 _transactionsQueue = [NSKeyedUnarchiver unarchiveObjectWithFile: PATH_ACTIONS_STATE];
             
@@ -48,6 +51,8 @@
             NSLog(@"%@", [e description]);
         }
         
+        if (!_globalObjectStore)
+            _globalObjectStore = [NSMutableDictionary dictionary];
         if (!_transactionsQueue)
             _transactionsQueue = [NSMutableArray array];
         [self performNextAction];
@@ -86,11 +91,11 @@
 - (void)updateDiskCacheDebounced
 {
     if (_user) {
-        [NSKeyedArchiver archiveRootObject:_user toFile:PATH_USER_STATE];
+        [NSKeyedArchiver archiveRootObject:@{@"user":_user, @"objectStore":_globalObjectStore} toFile:PATH_STORE_STATE];
         [NSKeyedArchiver archiveRootObject:_transactionsQueue toFile: PATH_ACTIONS_STATE];
     } else {
         [[NSFileManager defaultManager] removeItemAtPath: PATH_ACTIONS_STATE error: nil];
-        [[NSFileManager defaultManager] removeItemAtPath: PATH_USER_STATE error:nil];
+        [[NSFileManager defaultManager] removeItemAtPath: PATH_STORE_STATE error:nil];
     }
     _updateDiskCacheTriggered = NO;
 }
@@ -131,6 +136,23 @@
     [self enqueueHTTPRequestOperation:operation];
 }
 
+- (MModel*)globalObjectWithID:(NSString*)ID ofClass:(Class)type
+{
+    NSString * key = NSStringFromClass(type);
+    NSMutableDictionary * dict = [_globalObjectStore objectForKey: key];
+    return [dict objectForKey: ID];
+}
+
+- (void)addGlobalObject:(MModel*)model
+{
+    NSString * key = NSStringFromClass([model class]);
+
+    if (![_globalObjectStore objectForKey: key])
+        [_globalObjectStore setObject:[NSMutableDictionary dictionary] forKey:key];
+    
+    [[_globalObjectStore objectForKey: key] setObject: model forKey: [model ID]];
+}
+
 - (void)setUser:(MUser *)user
 {
     _user = user;
@@ -150,10 +172,6 @@
 
 - (void)queueAPITransaction:(MAPITransaction*)a
 {
-    if ([a object] == nil)
-        @throw [NSException exceptionWithName:@"Queue API Action" reason:@"Trying to enqueue item with nil object" userInfo:nil];
-    
-    
     // look for another item in the queue effecting the same item that has not started yet
     if ([_transactionsQueue containsObject: a] == YES)
         return;
@@ -194,6 +212,7 @@
         [self dequeueAPITransaction: a];
         [self criticalRequestFailed: err];
     }
+    [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_API_QUEUE_CHANGED object:nil];
 }
 
 - (void)dequeueAPITransaction:(MAPITransaction*)a

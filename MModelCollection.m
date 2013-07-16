@@ -18,6 +18,7 @@
     if (self) {
         _collectionName = name;
         _collectionClass = c;
+        _collectionPageSize = 30;
         _cache = [NSMutableArray array];
     }
     return self;
@@ -29,6 +30,7 @@
     if (self) {
         _collectionClass = NSClassFromString([aDecoder decodeObjectForKey: @"_collectionClass"]);
         _collectionName = [aDecoder decodeObjectForKey: @"_collectionName"];
+        _collectionPageSize = [aDecoder decodeIntForKey: @"_collectionPageSize"];
         _cache = [aDecoder decodeObjectForKey: @"_cache"];
         if (!_cache)
             _cache = [NSMutableArray array];
@@ -43,6 +45,7 @@
 - (void)encodeWithCoder:(NSCoder *)aCoder
 {
     [aCoder encodeObject:_collectionName forKey:@"_collectionName"];
+    [aCoder encodeInt:_collectionPageSize forKey:@"_collectionPageSize"];
     [aCoder encodeObject:NSStringFromClass(_collectionClass) forKey:@"_collectionClass"];
     [aCoder encodeObject:_cache forKey:@"_cache"];
 }
@@ -129,10 +132,14 @@
             ID = [(NSNumber*)ID stringValue];
 
         MModel * existing = nil;
-        for (MModel * obj in unused) {
-            if ([[obj ID] isEqualToString: ID]) {
-                existing = obj;
-                break;
+        if (_collectionObjectsGloballyUnique) {
+            existing = [[MAPIClient shared] globalObjectWithID:ID ofClass: _collectionClass];
+        } else {
+            for (MModel * obj in unused) {
+                if ([[obj ID] isEqualToString: ID]) {
+                    existing = obj;
+                    break;
+                }
             }
         }
 
@@ -143,6 +150,7 @@
             id obj = [[self.collectionClass alloc] initWithDictionary: json];
             [obj setParent: self];
             [_cache addObject: obj];
+            [[MAPIClient shared] addGlobalObject: obj];
         }
     }
     
@@ -154,7 +162,7 @@
     [_cache sortUsingSelector: @selector(sort:)];
 }
 
-- (void)updateFromPath:(NSString*)path replaceExistingContents:(BOOL)replace
+- (void)updateFromPath:(NSString*)path replaceExistingContents:(BOOL)replace withCallback:(void(^)(void))callback
 {
     if (_refreshInProgress)
         return;
@@ -168,11 +176,15 @@
         [[MAPIClient shared] updateDiskCache: NO];
         _refreshInProgress = NO;
         [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_COLLECTION_CHANGED object:self];
+        if (callback)
+            callback();
         
     } failure:^(NSError *err) {
         [self setRefreshDate: [NSDate date]];
         _refreshInProgress = NO;
         _loadReturnedZero = NO;
+        if (callback)
+            callback();
         [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_COLLECTION_CHANGED object:self];
     }];
 }
@@ -191,7 +203,13 @@
 
 - (void)refresh
 {
-    [self updateFromPath:[self resourcePath] replaceExistingContents:YES];
+    [self refreshWithCallback: NULL];
+}
+
+- (void)refreshWithCallback:(void(^)(void))callback
+{
+    NSString * path = [[self resourcePath] stringByAppendingFormat:@"?count=%d", _collectionPageSize];
+    [self updateFromPath:path replaceExistingContents:YES withCallback: callback];
 }
 
 - (void)refreshIfOld
@@ -207,8 +225,8 @@
         return;
     
     int page = floorf([[self all] count] / 10.0) + 1;
-    NSString * path = [[self resourcePath] stringByAppendingFormat:@"?page=%d", page];
-    [self updateFromPath: path replaceExistingContents:NO];
+    NSString * path = [[self resourcePath] stringByAppendingFormat:@"?page=%d&count=%d", page, _collectionPageSize];
+    [self updateFromPath: path replaceExistingContents:NO withCallback:NULL];
 }
 
 

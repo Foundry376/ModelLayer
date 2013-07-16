@@ -20,6 +20,8 @@
 
 @property (nonatomic, strong) NSString * collectionName;
 @property (nonatomic, assign) BOOL collectionIsNested;
+@property (nonatomic, assign) BOOL collectionObjectsGloballyUnique;
+@property (nonatomic, assign) int collectionPageSize;
 
 @property (nonatomic, assign) BOOL canMoveItems;
 @property (nonatomic, assign) Class collectionClass;
@@ -44,12 +46,13 @@
 - (void)removeItemWithID:(NSString*)ID;
 
 - (void)updateWithResourceJSON:(NSArray*)jsons discardMissingModels:(BOOL)discardMissing;
-- (void)updateFromPath:(NSString*)path replaceExistingContents:(BOOL)replace;
+- (void)updateFromPath:(NSString*)path replaceExistingContents:(BOOL)replace withCallback:(void(^)(void))callback;
 
 - (NSArray*)all;
 - (int)count;
 
 - (void)refresh;
+- (void)refreshWithCallback:(void(^)(void))callback;
 - (void)refreshIfOld;
 
 - (void)loadMore;
