@@ -21,10 +21,10 @@
     
     if ((type == TRANSACTION_SAVE) && ([object isUnsaved])) {
         [t setRequestURL: [[object parent] resourcePath]];
-        [t setRequestMethod: @"PUT"];
+        [t setRequestMethod: @"POST"];
     } else {
         [t setRequestURL: [object resourcePath]];
-        [t setRequestMethod: @"POST"];
+        [t setRequestMethod: @"PUT"];
     }
 
     return t;
