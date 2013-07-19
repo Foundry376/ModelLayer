@@ -131,26 +131,29 @@
         if ([ID isKindOfClass: [NSString class]] == NO)
             ID = [(NSNumber*)ID stringValue];
 
-        MModel * existing = nil;
+        MModel * model = nil;
         if (_collectionObjectsGloballyUnique) {
-            existing = [[MAPIClient shared] globalObjectWithID:ID ofClass: _collectionClass];
+            model = [[MAPIClient shared] globalObjectWithID:ID ofClass: _collectionClass];
         } else {
             for (MModel * obj in unused) {
                 if ([[obj ID] isEqualToString: ID]) {
-                    existing = obj;
+                    model = obj;
                     break;
                 }
             }
         }
 
-        if (existing) {
-            [existing updateWithResourceJSON: json];
-            [unused removeObject: existing];
+        if (model) {
+            [model updateWithResourceJSON: json];
+            [unused removeObject: model];
+            [model setParent: self];
+            if (![_cache containsObject: model])
+                [_cache addObject: model];
         } else {
-            id obj = [[self.collectionClass alloc] initWithDictionary: json];
-            [obj setParent: self];
-            [_cache addObject: obj];
-            [[MAPIClient shared] addGlobalObject: obj];
+            model = [[self.collectionClass alloc] initWithDictionary: json];
+            [[MAPIClient shared] addGlobalObject: model];
+            [model setParent: self];
+            [_cache addObject: model];
         }
     }
     
