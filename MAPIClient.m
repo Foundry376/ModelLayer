@@ -259,7 +259,7 @@
     if ([err code] == 401)
         message = @"Please check your email address and password.";
 
-    if (message)
+    if (message && [message isKindOfClass: [NSString class]])
         [[[UIAlertView alloc] initWithTitle:@"Error" message:message delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] show];
     
     [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_API_QUEUE_CHANGED object:nil];

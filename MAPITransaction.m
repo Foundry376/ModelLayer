@@ -18,6 +18,7 @@
     [t setCallback: NULL];
     [t setType: type];
     [t setObject: object];
+    [t setRequestReturnsModel: YES];
     
     if ((type == TRANSACTION_SAVE) && ([object isUnsaved])) {
         [t setRequestURL: [[object parent] resourcePath]];
@@ -37,6 +38,7 @@
     [t setType: TRANSACTION_CUSTOM];
     [t setRequestURL: path];
     [t setRequestMethod: method];
+    [t setRequestReturnsModel: YES];
     
     return t;    
 }
@@ -49,6 +51,7 @@
         _object = [aDecoder decodeObjectForKey: @"object"];
         _requestURL = [aDecoder decodeObjectForKey: @"requestURL"];
         _requestMethod = [aDecoder decodeObjectForKey: @"requestMethod"];
+        _requestReturnsModel = [aDecoder decodeBoolForKey: @"requestReturnsModel"];
         _callback = NULL;
         _started = NO;
     }
@@ -60,6 +63,7 @@
     [aCoder encodeObject:_object forKey:@"object"];
     [aCoder encodeObject:_requestURL forKey: @"requestURL"];
     [aCoder encodeObject:_requestMethod forKey: @"requestMethod"];
+    [aCoder encodeBool:_requestReturnsModel forKey:@"requestReturnsModel"];
     [aCoder encodeInt:_type forKey:@"type"];
 }
 
@@ -67,8 +71,13 @@
 {
     _started = true;
 
-    [[MAPIClient shared] requestPath:_requestURL withMethod:_requestMethod withParameters:[_object resourceJSON] userTriggered:NO expectedClass:[NSDictionary class] success:^(id responseObject) {
-        [self.object updateWithResourceJSON: responseObject];
+    Class expectation = NULL;
+    if (_requestReturnsModel)
+        expectation = [NSDictionary class];
+    
+    [[MAPIClient shared] requestPath:_requestURL withMethod:_requestMethod withParameters:[_object resourceJSON] userTriggered:NO expectedClass:expectation success:^(id responseObject) {
+        if (_requestReturnsModel)
+            [self.object updateWithResourceJSON: responseObject];
         [[MAPIClient shared] finishedAPITransaction:self withError: nil];
         if (_callback)
             _callback(YES);

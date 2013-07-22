@@ -173,7 +173,7 @@
     _refreshInProgress = YES;
 
     [[MAPIClient shared] getCollectionAtPath:path userTriggered:NO success:^(id responseObject) {
-        _loadReturnedZero = ([responseObject count] == 0);
+        _loadReturnedLessThanRequested = ([responseObject count] < _collectionPageSize);
         [self updateWithResourceJSON: responseObject discardMissingModels: replace];
         [self setRefreshDate: [NSDate date]];
         [[MAPIClient shared] updateDiskCache: NO];
@@ -185,7 +185,7 @@
     } failure:^(NSError *err) {
         [self setRefreshDate: [NSDate date]];
         _refreshInProgress = NO;
-        _loadReturnedZero = NO;
+        _loadReturnedLessThanRequested = NO;
         if (callback)
             callback();
         [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_COLLECTION_CHANGED object:self];
@@ -224,10 +224,10 @@
 
 - (void)loadMore
 {
-    if (_loadReturnedZero)
+    if (_loadReturnedLessThanRequested)
         return;
     
-    int page = floorf([[self all] count] / 10.0) + 1;
+    int page = floorf([[self all] count] / _collectionPageSize) + 1;
     NSString * path = [[self resourcePath] stringByAppendingFormat:@"?page=%d&count=%d", page, _collectionPageSize];
     [self updateFromPath: path replaceExistingContents:NO withCallback:NULL];
 }

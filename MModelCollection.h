@@ -15,7 +15,7 @@
 @interface MModelCollection : NSObject <NSCoding, MRestfulObject>
 {
     NSMutableArray * _cache;
-    BOOL _loadReturnedZero;
+    BOOL _loadReturnedLessThanRequested;
 }
 
 @property (nonatomic, strong) NSString * collectionName;
