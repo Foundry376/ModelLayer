@@ -20,12 +20,17 @@
     [t setObject: object];
     [t setRequestReturnsModel: YES];
     
-    if ((type == TRANSACTION_SAVE) && ([object isUnsaved])) {
-        [t setRequestURL: [[object parent] resourcePath]];
-        [t setRequestMethod: @"PUT"];
-    } else {
+    if (type == TRANSACTION_DELETE) {
         [t setRequestURL: [object resourcePath]];
-        [t setRequestMethod: @"POST"];
+        [t setRequestMethod: @"DELETE"];
+    } else {
+        if ((type == TRANSACTION_SAVE) && ([object isUnsaved])) {
+            [t setRequestURL: [[object parent] resourcePath]];
+            [t setRequestMethod: @"POST"];
+        } else {
+            [t setRequestURL: [object resourcePath]];
+            [t setRequestMethod: @"PUT"];
+        }
     }
 
     return t;

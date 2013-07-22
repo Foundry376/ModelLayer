@@ -206,13 +206,17 @@
             if ([value isKindOfClass: [NSNull class]]) {
                 if ([type isEqualToString:@"Ti"] || [type isEqualToString:@"Tf"])
                     [self setValue:[NSNumber numberWithInt: 0] forKey:key];
+                else if ([type isEqualToString: @"Tc"])
+                    value = [NSNumber numberWithBool: NO];
                 else
                     [self setValue:nil forKey:key];
             } else {
                 if ([type isEqualToString: @"T@\"NSString\""] && [value isKindOfClass: [NSNumber class]])
                     value = [(NSNumber*)value stringValue];
-                if ([type isEqualToString: @"Tc"] && [value isKindOfClass: [NSString class]])
-                    value = [NSNumber numberWithChar: [(NSString*)value characterAtIndex: 0]];
+                if ([type isEqualToString: @"Tc"]) {
+                    if ([value isKindOfClass: [NSString class]])
+                        value = [NSNumber numberWithChar: [(NSString*)value characterAtIndex: 0]];
+                }
                 [self setValue:value forKey:key];
             }
         }
