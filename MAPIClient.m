@@ -66,7 +66,7 @@
     if (status == AFNetworkReachabilityStatusNotReachable) {
         if (!_hasDisplayedDisconnectionNotice) {
             _hasDisplayedDisconnectionNotice = YES;
-            NSString * msg = @"You've been disconnected from the internet. Your work will be saved offline until a connection can be established.";
+            NSString * msg = @"You've been disconnected from the internet. Your activity will be saved offline until a connection can be established.";
             UIAlertView * a = [[UIAlertView alloc] initWithTitle:@"Offline" message:msg delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil];
             [a show];
         }

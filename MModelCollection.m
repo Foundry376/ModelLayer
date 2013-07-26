@@ -199,6 +199,11 @@
     return _cache;
 }
 
+- (NSArray*)allCached
+{
+    return _cache;
+}
+
 - (int)count
 {
     return [[self all] count];

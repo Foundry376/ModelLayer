@@ -49,6 +49,7 @@
 - (void)updateFromPath:(NSString*)path replaceExistingContents:(BOOL)replace withCallback:(void(^)(void))callback;
 
 - (NSArray*)all;
+- (NSArray*)allCached;
 - (int)count;
 
 - (void)refresh;
