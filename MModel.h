@@ -23,6 +23,7 @@ typedef enum SaveState {
 }
 
 @property (nonatomic, strong) NSString * ID;
+@property (nonatomic, strong) NSString * resourcePathOverride;
 @property (nonatomic, strong) NSDate * createdAt;
 @property (nonatomic, strong) NSDate * updatedAt;
 @property (atomic, assign) SaveState state;

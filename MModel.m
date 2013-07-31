@@ -31,6 +31,9 @@
     if (self){
         NSDictionary * mapping = [[self class] resourceKeysForPropertyKeys];
         NSArray * properties = [mapping allKeys];
+        
+        _resourcePathOverride = [aDecoder decodeObjectForKey:@"resourcePathOverride"];
+        
         [self setup];
         [self setEachPropertyInSet:properties withValueProvider:^BOOL(id key, NSObject ** value, NSString * type) {
             if (![aDecoder containsValueForKey: key])
@@ -53,6 +56,9 @@
             return;
         [aCoder encodeObject:value forKey:key];
     }];
+    
+    if (_resourcePathOverride)
+        [aCoder encodeObject:_resourcePathOverride forKey: @"resourcePathOverride"];
 }
 
 - (void)setup
@@ -82,6 +88,9 @@
 
 - (NSString*)resourcePath
 {
+    if (_resourcePathOverride)
+        return _resourcePathOverride;
+    
     if (![self ID])
         @throw @"MModel does not have a resource path. Add it to a collection before saving it!";
     return [[_parent resourcePath] stringByAppendingPathComponent: [self ID]];

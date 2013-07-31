@@ -15,7 +15,7 @@
 @interface MModelCollection : NSObject <NSCoding, MRestfulObject>
 {
     NSMutableArray * _cache;
-    BOOL _loadReturnedZero;
+    BOOL _loadReturnedLessThanRequested;
 }
 
 @property (nonatomic, strong) NSString * collectionName;
@@ -49,6 +49,7 @@
 - (void)updateFromPath:(NSString*)path replaceExistingContents:(BOOL)replace withCallback:(void(^)(void))callback;
 
 - (NSArray*)all;
+- (NSArray*)allCached;
 - (int)count;
 
 - (void)refresh;

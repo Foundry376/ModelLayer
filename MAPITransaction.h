@@ -25,6 +25,7 @@ typedef enum MAPITransactionType {
 @property (nonatomic, strong) MModel * object;
 @property (nonatomic, strong) NSString * requestURL;
 @property (nonatomic, strong) NSString * requestMethod;
+@property (nonatomic, assign) BOOL requestReturnsModel;
 @property (nonatomic, assign) MAPITransactionType type;
 @property (nonatomic, strong) MAPITransactionCallback callback;
 @property (nonatomic, assign) BOOL started;

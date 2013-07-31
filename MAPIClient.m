@@ -68,7 +68,7 @@
     if (status == AFNetworkReachabilityStatusNotReachable) {
         if (!_hasDisplayedDisconnectionNotice) {
             _hasDisplayedDisconnectionNotice = YES;
-            NSString * msg = @"You've been disconnected from the internet. Your work will be saved offline until a connection can be established.";
+            NSString * msg = @"You've been disconnected from the internet. Your activity will be saved offline until a connection can be established.";
             UIAlertView * a = [[UIAlertView alloc] initWithTitle:@"Offline" message:msg delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil];
             [a show];
         }
@@ -261,7 +261,7 @@
     if ([err code] == 401)
         message = @"Please check your email address and password.";
 
-    if (message)
+    if (message && [message isKindOfClass: [NSString class]])
         [[[UIAlertView alloc] initWithTitle:@"Error" message:message delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] show];
     
     [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_API_QUEUE_CHANGED object:nil];
