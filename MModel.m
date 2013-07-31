@@ -144,7 +144,11 @@
             *value = [NSNumber numberWithInt: [[json objectForKey: jsonKey] intValue]];
         
         } else if ([type isEqualToString: @"T@\"NSDate\""]) {
-            *value = [[json objectForKey: jsonKey] dateValueWithFormat: API_TIMESTAMP_FORMAT];
+            NSString * timestamp = [json objectForKey: jsonKey];
+            if ([timestamp hasSuffix: @"Z"])
+                timestamp = [[timestamp substringToIndex:[timestamp length] - 1] stringByAppendingString:@"-0000"];
+            
+            *value = [timestamp dateValueWithFormat: API_TIMESTAMP_FORMAT];
         
         } else if ([type isEqualToString: @"T@\"MModelCollection\""]) {
             MModelCollection * collection = (MModelCollection *)*value;
