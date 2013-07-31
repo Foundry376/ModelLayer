@@ -19,7 +19,9 @@
     static MAPIClient * sharedClient = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        sharedClient = [[MAPIClient alloc] initWithBaseURL:[NSURL URLWithString: API_ROOT]];
+        NSURL * baseURL = [NSURL URLWithString: [[NSBundle mainBundle] objectForInfoDictionaryKey:@"APIRoot"]];
+        NSLog(@"%@", [baseURL absoluteString]);
+        sharedClient = [[MAPIClient alloc] initWithBaseURL: baseURL];
     });
     return sharedClient;
 }
