@@ -173,7 +173,7 @@
 
 - (void)reload:(MAPITransactionCallback)callback
 {
-    [[MAPIClient shared] getModelAtPath:[self resourcePath] userTriggered:NO success:^(id responseObject) {
+    [[MAPIClient shared] dictionaryAtPath:[self resourcePath] userTriggered:NO success:^(id responseObject) {
         [self updateWithResourceJSON: responseObject];
         if (callback) callback(YES);
         

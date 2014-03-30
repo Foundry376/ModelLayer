@@ -10,4 +10,7 @@
 
 @interface MUser : MModel
 
+- (NSString*)credentialUsername;
+- (NSString*)credentialPassword;
+
 @end

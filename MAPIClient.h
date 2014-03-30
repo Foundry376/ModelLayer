@@ -13,7 +13,7 @@
 #define NOTIF_MODEL_CHANGED         @"m_model_changed"
 #define NOTIF_API_QUEUE_CHANGED     @"m_api_queue_changed"
 
-@interface MAPIClient : AFHTTPClient
+@interface MAPIClient : AFHTTPRequestOperationManager
 {
     NSMutableArray * _transactionsQueue;
     BOOL _hasDisplayedDisconnectionNotice;
@@ -32,8 +32,8 @@
 
 #pragma mark Requesting Object Data
 
-- (void)getModelAtPath:(NSString*)path userTriggered:(BOOL)triggered success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback;
-- (void)getCollectionAtPath:(NSString*)path userTriggered:(BOOL)triggered success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback;
+- (void)dictionaryAtPath:(NSString*)path userTriggered:(BOOL)triggered success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback;
+- (void)arrayAtPath:(NSString*)path userTriggered:(BOOL)triggered success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback;
 - (void)requestPath:(NSString*)path withMethod:(NSString*)method withParameters: params userTriggered:(BOOL)triggered expectedClass:(Class)expectation success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback;
 
 - (MModel*)globalObjectWithID:(NSString*)ID ofClass:(Class)type;
@@ -49,7 +49,7 @@
 
 #pragma mark Handling Request Results
 
-- (void)criticalRequestFailed:(NSError*)err;
+- (void)displayNetworkError:(NSError*)error forOperation:(AFHTTPRequestOperation*)operation withGoal:(NSString*)goal;
 
 
 @end

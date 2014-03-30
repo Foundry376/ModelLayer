@@ -10,4 +10,14 @@
 
 @implementation MUser
 
+- (NSString*)credentialUsername
+{
+    return nil;
+}
+
+- (NSString*)credentialPassword
+{
+    return nil;
+}
+
 @end

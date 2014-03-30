@@ -30,20 +30,14 @@
 {
     self = [super initWithBaseURL:url];
     if (self) {
-        [self registerHTTPOperationClass: [AFJSONRequestOperation class]];
-        [self setDefaultHeader:@"Accept" value:@"application/json"];
-        [self setAllowsInvalidSSLCertificate: YES];
-
-        typeof(self) __weak __self = self;
-        [self setReachabilityStatusChangeBlock:^(AFNetworkReachabilityStatus status) {
-            [__self apiReachabilityChanged: status];
-        }];
+        [self setRequestSerializer: [AFJSONRequestSerializer serializer]];
+        [self setResponseSerializer: [AFJSONResponseSerializer serializerWithReadingOptions: NSJSONReadingAllowFragments]];
 
         @try {
             if ([[NSFileManager defaultManager] fileExistsAtPath: PATH_STORE_STATE]) {
                 NSDictionary * dict = [NSKeyedUnarchiver unarchiveObjectWithFile: PATH_STORE_STATE];
                 _globalObjectStore = [dict objectForKey:@"objectStore"];
-                _user = [dict objectForKey:@"user"];
+                [self setUser: [dict objectForKey:@"user"]];
             }
             
             if ([[NSFileManager defaultManager] fileExistsAtPath: PATH_ACTIONS_STATE])
@@ -58,13 +52,12 @@
         if (!_transactionsQueue)
             _transactionsQueue = [NSMutableArray array];
         [self performNextAction];
-
-        [[AFNetworkActivityIndicatorManager sharedManager] setEnabled:YES];
     }
     return self;
 }
 
-- (void)apiReachabilityChanged:(AFNetworkReachabilityStatus)status {
+- (void)apiReachabilityChanged:(AFNetworkReachabilityStatus)status
+{
     if (status == AFNetworkReachabilityStatusNotReachable) {
         if (!_hasDisplayedDisconnectionNotice) {
             _hasDisplayedDisconnectionNotice = YES;
@@ -104,38 +97,40 @@
 
 #pragma mark Requesting Object Data
 
-- (void)getModelAtPath:(NSString*)path userTriggered:(BOOL)triggered success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback
+- (void)dictionaryAtPath:(NSString*)path userTriggered:(BOOL)triggered success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback
 {
     [self requestPath:path withMethod:@"GET" withParameters:nil userTriggered:triggered expectedClass:[NSDictionary class] success:successCallback failure:failureCallback];
 }
 
-- (void)getCollectionAtPath:(NSString*)path userTriggered:(BOOL)triggered success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback
+- (void)arrayAtPath:(NSString*)path userTriggered:(BOOL)triggered success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback
 {
     [self requestPath:path withMethod:@"GET" withParameters:nil userTriggered:triggered expectedClass:[NSArray class] success:successCallback failure:failureCallback];
 }
 
 - (void)requestPath:(NSString*)path withMethod:(NSString*)method withParameters: params userTriggered:(BOOL)triggered expectedClass:(Class)expectation success:(void (^)(id responseObject))successCallback failure:(void (^)(NSError *err))failureCallback
 {
-    NSURLRequest *request = [self requestWithMethod:method path:path parameters:params];
-    AFHTTPRequestOperation *operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    if (!self.baseURL)
+        @throw [NSException exceptionWithName:@"Cannot make request" reason:@"Base URL is not defined." userInfo:nil];
+        
+    NSMutableURLRequest *request = [self.requestSerializer requestWithMethod:method URLString:[[NSURL URLWithString:path relativeToURL:self.baseURL] absoluteString] parameters:params error:nil];
+    AFHTTPRequestOperation * operation = [self HTTPRequestOperationWithRequest:request success:^(AFHTTPRequestOperation *operation, id responseObject) {
         if (expectation && ([responseObject isKindOfClass: expectation] == NO)) {
-            NSError * err = [NSError errorWithExpectationFailure: [responseObject class]];
+            NSError * error = [NSError errorWithExpectationFailure: [responseObject class]];
             if (triggered)
-                [self criticalRequestFailed: err];
+                [self displayNetworkError:error forOperation:operation withGoal:@"Request"];
             if (failureCallback)
-                failureCallback(err);
+                failureCallback(error);
             return;
         }
         successCallback(responseObject);
-        
-    } failure:^(AFHTTPRequestOperation *operation, NSError *err) {
+
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         if (triggered)
-            [self criticalRequestFailed: err];
+            [self displayNetworkError:error forOperation:operation withGoal:@"Request"];
         if (failureCallback)
-            failureCallback(err);
+            failureCallback(error);
     }];
-    
-    [self enqueueHTTPRequestOperation:operation];
+    [self.operationQueue addOperation:operation];
 }
 
 - (MModel*)globalObjectWithID:(NSString*)ID ofClass:(Class)type
@@ -158,8 +153,10 @@
 - (void)setUser:(MUser *)user
 {
     _user = user;
-    if (user == nil)
-        [self clearAuthorizationHeader];
+    if (user)
+        [[self requestSerializer] setAuthorizationHeaderFieldWithUsername:[user credentialUsername] password:[user credentialPassword]];
+    else
+        [[self requestSerializer] clearAuthorizationHeader];
     
     [self updateDiskCache: YES];
     [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_USER_CHANGED object:nil];
@@ -179,7 +176,7 @@
         return;
     
     [_transactionsQueue addObject: a];
-    if (([self networkReachabilityStatus] != AFNetworkReachabilityStatusNotReachable) && (![a started]))
+    if (([[self reachabilityManager] networkReachabilityStatus] != AFNetworkReachabilityStatusNotReachable) && (![a started]))
         [a performDeferred];
     
     NSLog(@"API: Queued API action: %@", [a description]);
@@ -212,7 +209,7 @@
     } else if (err) {
         // TODO: Additional logic was here... Do we always want to throw away the transaction if it fails once?
         [self dequeueAPITransaction: a];
-        [self criticalRequestFailed: err];
+        [self displayNetworkError:err forOperation:nil withGoal:@"Request"];
     }
     [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_API_QUEUE_CHANGED object:nil];
 }
@@ -226,7 +223,7 @@
 
 - (void)performNextActionIfReconnected
 {
-    if ([self networkReachabilityStatus] != AFNetworkReachabilityStatusNotReachable)
+    if ([[self reachabilityManager] networkReachabilityStatus] != AFNetworkReachabilityStatusNotReachable)
         [self performNextAction];
     else {
         NSString * msg = @"Please connect to the internet and try to sync again.";
@@ -248,24 +245,23 @@
 
 #pragma mark Handling Request Results
 
-- (void)criticalRequestFailed:(NSError*)err
+- (void)displayNetworkError:(NSError*)error forOperation:(AFHTTPRequestOperation*)operation withGoal:(NSString*)goal
 {
-    NSData * jsonData = [[err.userInfo objectForKey: @"NSLocalizedRecoverySuggestion"] dataUsingEncoding: NSUTF8StringEncoding];
-    NSString * message = err.localizedDescription;
-
-    if (jsonData) {
-        NSDictionary * json = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingAllowFragments error:NULL];
-        if (json) message = [json objectForKey: @"error"];
-    }
+    NSString * message = nil;
     
-    if ([err code] == 401)
+    if ([[operation responseObject] objectForKey: @"error"])
+        message = [[operation responseObject] objectForKey: @"error"];
+    
+    else if (([error code] == 401) || ([[operation response] statusCode] == 401))
         message = @"Please check your email address and password.";
 
-    if (message && [message isKindOfClass: [NSString class]])
-        [[[UIAlertView alloc] initWithTitle:@"Error" message:message delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] show];
+    else
+        message = [error localizedDescription];
     
-    [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_API_QUEUE_CHANGED object:nil];
+    NSString * title = [goal stringByAppendingString: @" Failed"];
+    [[[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil] show];
 }
+
 
 
 @end

@@ -172,7 +172,7 @@
     
     _refreshInProgress = YES;
 
-    [[MAPIClient shared] getCollectionAtPath:path userTriggered:NO success:^(id responseObject) {
+    [[MAPIClient shared] arrayAtPath:path userTriggered:NO success:^(id responseObject) {
         _loadReturnedLessThanRequested = ([responseObject count] < _collectionPageSize);
         [self updateWithResourceJSON: responseObject discardMissingModels: replace];
         [self setRefreshDate: [NSDate date]];

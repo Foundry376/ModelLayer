@@ -31,7 +31,10 @@
 
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([self associatedValueForKey: (void*)selector]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
             [self performSelector: selector];
+#pragma clang diagnostic pop
             [self associateValue:nil withKey:(void*)selector];
         }
     });
