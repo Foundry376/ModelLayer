@@ -152,7 +152,7 @@
         
         } else if ([type isEqualToString: @"T@\"MModelCollection\""]) {
             MModelCollection * collection = (MModelCollection *)*value;
-            [collection updateWithResourceJSON: [json objectForKey: jsonKey] discardMissingModels: YES];
+            [collection modelsFetched:[json objectForKey: jsonKey] replaceExistingContents:YES];
             [collection setRefreshDate: [NSDate date]];
             
         } else {

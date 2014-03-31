@@ -8,26 +8,30 @@
 
 #import <Foundation/Foundation.h>
 #import "MRestfulObject.h"
+#import "MModelCollectionFetcher.h"
+
 
 
 @class MModel;
 
-@interface MModelCollection : NSObject <NSCoding, MRestfulObject>
+@interface MModelCollection : NSObject <NSCoding, MRestfulObject, MModelCollectionFetcherDelegate>
 {
-    NSMutableArray * _cache;
-    BOOL _loadReturnedLessThanRequested;
+    NSMutableArray * _cacheArray;
+    NSMutableDictionary * _cacheDictionary;
 }
 
 @property (nonatomic, strong) NSString * collectionName;
 @property (nonatomic, assign) BOOL collectionIsNested;
 @property (nonatomic, assign) BOOL collectionObjectsGloballyUnique;
-@property (nonatomic, assign) int collectionPageSize;
 
-@property (nonatomic, assign) BOOL canMoveItems;
 @property (nonatomic, assign) Class collectionClass;
 @property (nonatomic, strong) NSObject<MRestfulObject> * parent;
+@property (nonatomic, strong) MModelCollectionFetcher * fetcher;
+
 @property (nonatomic, strong) NSDate * refreshDate;
+@property (nonatomic, strong) RefreshCallbackBlock refreshCallback;
 @property (nonatomic, assign) BOOL refreshInProgress;
+
 
 - (id)initWithCollectionName:(NSString*)name andClass:(Class)c;
 
@@ -39,23 +43,15 @@
 - (MModel*)objectAtIndex:(NSUInteger)index;
 - (MModel*)objectWithID:(NSString*)ID;
 
-- (void)addItem:(MModel*)model;
-- (void)addItemsFromArray:(NSArray*)array;
-
-- (void)removeItemAtIndex:(NSUInteger)i;
-- (void)removeItemWithID:(NSString*)ID;
-
-- (void)updateWithResourceJSON:(NSArray*)jsons discardMissingModels:(BOOL)discardMissing;
-- (void)updateFromPath:(NSString*)path replaceExistingContents:(BOOL)replace withCallback:(void(^)(void))callback;
-
 - (NSArray*)all;
 - (NSArray*)allCached;
 - (int)count;
 
 - (void)refresh;
-- (void)refreshWithCallback:(void(^)(void))callback;
 - (void)refreshIfOld;
+- (void)refreshWithCallback:(RefreshCallbackBlock)callback;
 
-- (void)loadMore;
+- (void)modelsFetched:(NSArray*)jsons replaceExistingContents:(BOOL)replaceExistingContents;
+- (void)modelsFetchFailed;
 
 @end

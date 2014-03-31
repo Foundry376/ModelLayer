@@ -13,6 +13,11 @@
 #define NOTIF_MODEL_CHANGED         @"m_model_changed"
 #define NOTIF_API_QUEUE_CHANGED     @"m_api_queue_changed"
 
+#define CHANGE_NOTIF_FOR(x)         [NSString stringWithFormat:@"m_collection_%@_changed", x]
+
+typedef void (^RefreshCallbackBlock)(BOOL successBlock);
+
+
 @interface MAPIClient : AFHTTPRequestOperationManager
 {
     NSMutableArray * _transactionsQueue;
