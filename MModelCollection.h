@@ -45,7 +45,7 @@
 
 - (NSArray*)all;
 - (NSArray*)allCached;
-- (int)count;
+- (NSUInteger)count;
 
 - (void)refresh;
 - (void)refreshIfOld;

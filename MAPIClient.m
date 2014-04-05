@@ -164,7 +164,7 @@
 
 #pragma mark Tracking API Access and Recovering from Offline State
 
-- (int)numberOfQueuedActions
+- (NSUInteger)numberOfQueuedActions
 {
     return [_transactionsQueue count];
 }
@@ -185,7 +185,7 @@
 
 - (void)removeQueuedTransactionsFor:(MModel*)obj
 {
-    for (int ii = [_transactionsQueue count] - 1; ii >= 0; ii--) {
+    for (int ii = (int)[_transactionsQueue count] - 1; ii >= 0; ii--) {
         MAPITransaction * t = [_transactionsQueue objectAtIndex: ii];
         if ([t object] == obj)
             [_transactionsQueue removeObjectAtIndex: ii];
@@ -248,16 +248,24 @@
 - (void)displayNetworkError:(NSError*)error forOperation:(AFHTTPRequestOperation*)operation withGoal:(NSString*)goal
 {
     NSString * message = nil;
+    BOOL responseIsDict = [[operation responseObject] isKindOfClass: [NSDictionary class]];
     
-    if ([[operation responseObject] objectForKey: @"error"])
+    if (responseIsDict && [[operation responseObject] objectForKey: @"error"]) {
         message = [[operation responseObject] objectForKey: @"error"];
     
-    else if (([error code] == 401) || ([[operation response] statusCode] == 401))
+    } else if (responseIsDict && [[[operation responseObject] allKeys] count] == 1) {
+        id onlyValue = [[[operation responseObject] allValues] lastObject];
+        if ([onlyValue isKindOfClass: [NSArray class]])
+            message = [onlyValue lastObject];
+        else if ([onlyValue isKindOfClass: [NSString class]])
+            message = onlyValue;
+    
+    } else if (([error code] == 401) || ([[operation response] statusCode] == 401)) {
         message = @"Please check your email address and password.";
 
-    else
+    } else {
         message = [error localizedDescription];
-    
+    }
     NSString * title = [goal stringByAppendingString: @" Failed"];
     [[[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil] show];
 }

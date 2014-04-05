@@ -46,7 +46,7 @@ typedef void (^RefreshCallbackBlock)(BOOL successBlock);
 
 #pragma mark Tracking API Access and Recovering from Offline State
 
-- (int)numberOfQueuedActions;
+- (NSUInteger)numberOfQueuedActions;
 - (void)queueAPITransaction:(MAPITransaction*)a;
 - (void)removeQueuedTransactionsFor:(MModel*)obj;
 - (void)finishedAPITransaction:(MAPITransaction*)a withError:(NSError*)err;

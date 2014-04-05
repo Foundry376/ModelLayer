@@ -39,7 +39,7 @@
         
         [self rebuildDictionaryCache];
         
-        NSLog(@"Initialized collection of %d %@ objects", [_cacheArray count], NSStringFromClass(_collectionClass));
+        NSLog(@"Initialized collection of %lu %@ objects", (unsigned long)[_cacheArray count], NSStringFromClass(_collectionClass));
     }
     return self;
 }
@@ -96,7 +96,7 @@
     return _cacheArray;
 }
 
-- (int)count
+- (NSUInteger)count
 {
     return [[self all] count];
 }
@@ -181,6 +181,9 @@
 
 - (void)modelsFetchFailed
 {
+    // we set the refresh date to prevent another refresh from being triggered
+    // immediately, and failing again.
+    _refreshDate = [NSDate date];
     _refreshInProgress = NO;
     if (_refreshCallback)
         _refreshCallback(NO);

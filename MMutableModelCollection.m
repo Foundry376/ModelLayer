@@ -19,7 +19,7 @@
 {
     [model setParent: self];
     [_cacheArray addObject: model];
-    [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_COLLECTION_CHANGED object:self];
+    [[NSNotificationCenter defaultCenter] postNotificationName:CHANGE_NOTIF_FOR(self.collectionName) object:self];
 }
 
 - (void)addItemsFromArray:(NSArray*)array
@@ -28,7 +28,7 @@
         [item setParent: self];
         [_cacheArray addObject: item];
     }
-    [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_COLLECTION_CHANGED object:self];
+    [[NSNotificationCenter defaultCenter] postNotificationName:CHANGE_NOTIF_FOR(self.collectionName) object:self];
 }
 
 - (void)removeItemAtIndex:(NSUInteger)index
@@ -50,7 +50,7 @@
         }
         
         [_cacheArray removeObject: obj];
-        [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_COLLECTION_CHANGED object:self];
+        [[NSNotificationCenter defaultCenter] postNotificationName:CHANGE_NOTIF_FOR(self.collectionName) object:self];
     }
 }
 
