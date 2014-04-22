@@ -115,13 +115,15 @@
 
 - (void)refreshWithCallback:(RefreshCallbackBlock)callback
 {
-    if (_refreshInProgress)
-        return;
-    
     if (!_fetcher)
         [self setFetcher: [[MModelCollectionPaginatingFetcher alloc] init]];
     
-    _refreshCallback = callback;
+    if (callback)
+        _refreshCallback = callback;
+
+    if (_refreshInProgress)
+        return;
+    
     _refreshInProgress = YES;
     [[self fetcher] fetch];
 }
