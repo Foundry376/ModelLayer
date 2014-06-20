@@ -9,13 +9,14 @@
 #import "MAPIClient.h"
 #import "NSError+MErrors.h"
 
-#define PATH_ACTIONS_STATE [@"~/Documents/Actions2.plist" stringByExpandingTildeInPath]
-#define PATH_STORE_STATE    [@"~/Documents/Store2.plist" stringByExpandingTildeInPath]
+#define PATH_ACTIONS_STATE  [NSTemporaryDirectory() stringByAppendingPathComponent:@"Actions.plist"]
+#define PATH_STORE_STATE    [NSTemporaryDirectory() stringByAppendingPathComponent:@"Store.plist"]
 
 @implementation MAPIClient
 
 + (MAPIClient *)shared
 {
+	
     static MAPIClient * sharedClient = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -33,6 +34,7 @@
         [self registerHTTPOperationClass: [AFJSONRequestOperation class]];
         [self setDefaultHeader:@"Accept" value:@"application/json"];
         [self setAllowsInvalidSSLCertificate: YES];
+        [self setParameterEncoding: AFJSONParameterEncoding];
 
         typeof(self) __weak __self = self;
         [self setReachabilityStatusChangeBlock:^(AFNetworkReachabilityStatus status) {
@@ -64,13 +66,12 @@
     return self;
 }
 
-- (void)apiReachabilityChanged:(AFNetworkReachabilityStatus)status {
+- (void)apiReachabilityChanged:(AFNetworkReachabilityStatus)status
+{
     if (status == AFNetworkReachabilityStatusNotReachable) {
         if (!_hasDisplayedDisconnectionNotice) {
             _hasDisplayedDisconnectionNotice = YES;
-            NSString * msg = @"You've been disconnected from the internet. Your activity will be saved offline until a connection can be established.";
-            UIAlertView * a = [[UIAlertView alloc] initWithTitle:@"Offline" message:msg delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil];
-            [a show];
+            // Put notice here if you want to alert users when they're offline
         }
     } else {
         _hasDisplayedDisconnectionNotice = NO;
@@ -167,7 +168,7 @@
 
 #pragma mark Tracking API Access and Recovering from Offline State
 
-- (int)numberOfQueuedActions
+- (NSUInteger)numberOfQueuedActions
 {
     return [_transactionsQueue count];
 }
@@ -188,7 +189,7 @@
 
 - (void)removeQueuedTransactionsFor:(MModel*)obj
 {
-    for (int ii = [_transactionsQueue count] - 1; ii >= 0; ii--) {
+    for (NSInteger ii = [_transactionsQueue count] - 1; ii >= 0; ii--) {
         MAPITransaction * t = [_transactionsQueue objectAtIndex: ii];
         if ([t object] == obj)
             [_transactionsQueue removeObjectAtIndex: ii];
@@ -255,14 +256,25 @@
 
     if (jsonData) {
         NSDictionary * json = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingAllowFragments error:NULL];
-        if (json) message = [json objectForKey: @"error"];
+        if (json && [json isKindOfClass: [NSDictionary class]])
+			message = [json objectForKey: @"error"];
+		if ([message isKindOfClass: [NSDictionary class]])
+			message = [(NSDictionary*)message objectForKey:@"message"];
     }
-    
-    if ([err code] == 401)
+
+    if (([err code] == 401) || ([message rangeOfString:@"got 401"].location != NSNotFound))
         message = @"Please check your email address and password.";
+    
+    if ([message length] == 0)
+        message = @"An unexpected error occurred. Please try again later.";
+    
+    // this is not really an error,just no content.
+    if ([message rangeOfString: @"timed out"].location != NSNotFound)
+        message = nil;
 
     if (message && [message isKindOfClass: [NSString class]])
         [[[UIAlertView alloc] initWithTitle:@"Error" message:message delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] show];
+    
     
     [[NSNotificationCenter defaultCenter] postNotificationName:NOTIF_API_QUEUE_CHANGED object:nil];
 }

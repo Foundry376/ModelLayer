@@ -50,7 +50,6 @@
 - (NSString *)hexStringFromColor;
 
 + (UIColor *)randomColor;
-+ (UIColor *)colorWithString:(NSString *)stringToConvert;
 + (UIColor *)colorWithRGBHex:(UInt32)hex;
 + (UIColor *)colorWithHexString:(NSString *)stringToConvert;
 

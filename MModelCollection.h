@@ -18,6 +18,8 @@
     BOOL _loadReturnedLessThanRequested;
 }
 
+@property (nonatomic, assign) BOOL disableNetworking;
+
 @property (nonatomic, strong) NSString * collectionName;
 @property (nonatomic, assign) BOOL collectionIsNested;
 @property (nonatomic, assign) BOOL collectionObjectsGloballyUnique;
@@ -50,7 +52,7 @@
 
 - (NSArray*)all;
 - (NSArray*)allCached;
-- (int)count;
+- (NSInteger)count;
 
 - (void)refresh;
 - (void)refreshWithCallback:(void(^)(void))callback;

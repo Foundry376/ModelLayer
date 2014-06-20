@@ -31,7 +31,7 @@
 
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([self associatedValueForKey: (void*)selector]) {
-            [self performSelector: selector];
+            SuppressPerformSelectorLeakWarning([self performSelector: selector];);
             [self associateValue:nil withKey:(void*)selector];
         }
     });

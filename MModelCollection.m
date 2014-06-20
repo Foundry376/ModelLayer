@@ -37,7 +37,7 @@
         for (MModel * model in _cache)
             [model setParent: self];
         
-        NSLog(@"Initialized collection of %d %@ objects", [_cache count], NSStringFromClass(_collectionClass));
+        NSLog(@"Initialized collection of %lu %@ objects", (unsigned long)[_cache count], NSStringFromClass(_collectionClass));
     }
     return self;
 }
@@ -105,11 +105,13 @@
         // adding a new "saving" flag to the object and probably just rejecting the deletion.
         // (to keep it simple)
         
-        if ([obj ID]) {
-            MAPITransaction * t = [MAPITransaction transactionForPerforming:TRANSACTION_DELETE of:obj];
-            [[MAPIClient shared] queueAPITransaction: t];
-        } else {
-            [[MAPIClient shared] removeQueuedTransactionsFor: obj];
+        if (!_disableNetworking) {
+            if ([obj ID]) {
+                MAPITransaction * t = [MAPITransaction transactionForPerforming:TRANSACTION_DELETE of:obj];
+                [[MAPIClient shared] queueAPITransaction: t];
+            } else {
+                [[MAPIClient shared] removeQueuedTransactionsFor: obj];
+            }
         }
         
         [_cache removeObject: obj];
@@ -170,9 +172,12 @@
     if (_refreshInProgress)
         return;
     
+    if (_disableNetworking)
+        return;
+        
     _refreshInProgress = YES;
 
-    [[MAPIClient shared] getCollectionAtPath:path userTriggered:NO success:^(id responseObject) {
+    [[MAPIClient shared] getCollectionAtPath:path userTriggered:NO success:^(NSArray * responseObject) {
         _loadReturnedLessThanRequested = ([responseObject count] < _collectionPageSize);
         [self updateWithResourceJSON: responseObject discardMissingModels: replace];
         [self setRefreshDate: [NSDate date]];
@@ -204,7 +209,7 @@
     return _cache;
 }
 
-- (int)count
+- (NSInteger)count
 {
     return [[self all] count];
 }

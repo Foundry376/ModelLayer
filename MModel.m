@@ -145,11 +145,16 @@
         
         } else if ([type isEqualToString: @"T@\"NSDate\""]) {
             NSString * timestamp = [json objectForKey: jsonKey];
+            if ([timestamp isKindOfClass: [NSString class]] == NO)
+                timestamp = @"";
+                
             if ([timestamp hasSuffix: @"Z"])
                 timestamp = [[timestamp substringToIndex:[timestamp length] - 1] stringByAppendingString:@"-0000"];
             
             *value = [timestamp dateValueWithFormat: API_TIMESTAMP_FORMAT];
-        
+            if (timestamp && !*value) {
+                NSLog(@"Date parsing failed for %@ with format %@", timestamp, API_TIMESTAMP_FORMAT);
+            }
         } else if ([type isEqualToString: @"T@\"MModelCollection\""]) {
             MModelCollection * collection = (MModelCollection *)*value;
             [collection updateWithResourceJSON: [json objectForKey: jsonKey] discardMissingModels: YES];

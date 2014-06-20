@@ -13,6 +13,8 @@
 #define NOTIF_MODEL_CHANGED         @"m_model_changed"
 #define NOTIF_API_QUEUE_CHANGED     @"m_api_queue_changed"
 
+#define API_TIMESTAMP_FORMAT  @"yyyy-MM-dd HH:mm:ss"
+
 @interface MAPIClient : AFHTTPClient
 {
     NSMutableArray * _transactionsQueue;
@@ -41,7 +43,7 @@
 
 #pragma mark Tracking API Access and Recovering from Offline State
 
-- (int)numberOfQueuedActions;
+- (NSUInteger)numberOfQueuedActions;
 - (void)queueAPITransaction:(MAPITransaction*)a;
 - (void)removeQueuedTransactionsFor:(MModel*)obj;
 - (void)finishedAPITransaction:(MAPITransaction*)a withError:(NSError*)err;
