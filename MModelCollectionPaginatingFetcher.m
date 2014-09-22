@@ -7,6 +7,7 @@
 //
 
 #import "MModelCollectionPaginatingFetcher.h"
+#import "MAPIClient.h"
 
 @implementation MModelCollectionPaginatingFetcher
 

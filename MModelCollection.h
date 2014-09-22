@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "MRestfulObject.h"
 #import "MModelCollectionFetcher.h"
-
+#import "MAPIClient.h"
 
 
 @class MModel;
