@@ -31,6 +31,8 @@
     self = [super initWithBaseURL:url];
     if (self) {
         [self setRequestSerializer: [AFJSONRequestSerializer serializer]];
+		[[self requestSerializer] setHTTPShouldHandleCookies: NO];
+
         [self setResponseSerializer: [AFJSONResponseSerializer serializerWithReadingOptions: NSJSONReadingAllowFragments]];
 
         @try {
@@ -153,6 +155,7 @@
 - (void)setUser:(MUser *)user
 {
     _user = user;
+
     if (user)
         [[self requestSerializer] setAuthorizationHeaderFieldWithUsername:[user credentialUsername] password:[user credentialPassword]];
     else
@@ -250,7 +253,7 @@
     NSString * message = nil;
     BOOL responseIsDict = [[operation responseObject] isKindOfClass: [NSDictionary class]];
     
-    if (responseIsDict && [[operation responseObject] objectForKey: @"error"]) {
+    if (responseIsDict && [[[operation responseObject] objectForKey: @"error"] isKindOfClass: [NSString class]]) {
         message = [[operation responseObject] objectForKey: @"error"];
     
     } else if (responseIsDict && [[[operation responseObject] allKeys] count] == 1) {
@@ -266,6 +269,7 @@
     } else {
         message = [error localizedDescription];
     }
+
     NSString * title = [goal stringByAppendingString: @" Failed"];
     [[[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:@"OK" otherButtonTitles: nil] show];
 }
