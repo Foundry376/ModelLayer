@@ -91,8 +91,9 @@
     if (_resourcePathOverride)
         return _resourcePathOverride;
     
-    if (![self ID])
-        @throw @"MModel does not have a resource path. Add it to a collection before saving it!";
+	NSAssert([self ID], @"MModel does not have a resource path. Add it to a collection before saving it!");
+	NSAssert(_parent, @"MModel does not have a parent, cannot create it's URL!");
+		
     return [[_parent resourcePath] stringByAppendingPathComponent: [self ID]];
 }
 
@@ -147,16 +148,30 @@
             NSString * timestamp = [json objectForKey: jsonKey];
             if ([timestamp hasSuffix: @"Z"])
                 timestamp = [[timestamp substringToIndex:[timestamp length] - 1] stringByAppendingString:@"-0000"];
-            
-            *value = [timestamp dateValueWithFormat: API_TIMESTAMP_FORMAT];
+            if ([[API_TIMESTAMP_FORMAT lowercaseString] isEqualToString: @"u"])
+				*value = [NSDate dateWithTimeIntervalSince1970: [timestamp intValue]];
+			else
+				*value = [timestamp dateValueWithFormat: API_TIMESTAMP_FORMAT];
         
         } else if ([type isEqualToString: @"T@\"MModelCollection\""]) {
             MModelCollection * collection = (MModelCollection *)*value;
             [collection modelsFetched:[json objectForKey: jsonKey] replaceExistingContents:YES];
             [collection setRefreshDate: [NSDate date]];
-            
+
         } else {
-            *value = [json objectForKey: jsonKey];
+			type = [type stringByReplacingOccurrencesOfString:@"T@" withString:@""];
+			type = [type stringByReplacingOccurrencesOfString:@"\"" withString:@""];
+			Class klass = NSClassFromString(type);
+			
+			if ([klass isSubclassOfClass: [MModel class]]) {
+				id obj = [json objectForKey: jsonKey];
+				if ([obj isKindOfClass: [NSNull class]])
+					*value = nil;
+				else
+					*value = [[klass alloc] initWithDictionary: obj];
+			} else {
+				*value = [json objectForKey: jsonKey];
+			}
         }
         return YES;
     }];
