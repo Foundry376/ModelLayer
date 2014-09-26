@@ -143,7 +143,10 @@
         
         } else if ([type isEqualToString: @"int"]) {
             *value = [NSNumber numberWithInt: [[json objectForKey: jsonKey] intValue]];
-        
+			
+		} else if ([type isEqualToString: @"Tc"]) {
+			*value = [NSNumber numberWithBool: [[json objectForKey: jsonKey] boolValue]];
+
         } else if ([type isEqualToString: @"T@\"NSDate\""]) {
             NSString * timestamp = [json objectForKey: jsonKey];
             if ([timestamp hasSuffix: @"Z"])
