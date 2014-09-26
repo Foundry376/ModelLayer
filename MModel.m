@@ -165,10 +165,10 @@
 			
 			if ([klass isSubclassOfClass: [MModel class]]) {
 				id obj = [json objectForKey: jsonKey];
-				if ([obj isKindOfClass: [NSNull class]])
-					*value = nil;
-				else
+				if ([obj isKindOfClass: [NSDictionary class]])
 					*value = [[klass alloc] initWithDictionary: obj];
+				else
+					*value = nil; // could be NSNull, or NSNumber (false)
 			} else {
 				*value = [json objectForKey: jsonKey];
 			}
