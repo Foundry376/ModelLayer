@@ -10,7 +10,7 @@
 #import "NSError+MErrors.h"
 
 #define PATH_ACTIONS_STATE  [NSTemporaryDirectory() stringByAppendingPathComponent:@"Actions.plist"]
-#define PATH_STORE_STATE    [NSTemporaryDirectory() stringByAppendingPathComponent:@"Store.plist"]
+#define PATH_STORE_STATE    [@"~/Documents/User.plist" stringByExpandingTildeInPath]
 
 @implementation MAPIClient
 
