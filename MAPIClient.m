@@ -38,7 +38,6 @@
         @try {
             if ([[NSFileManager defaultManager] fileExistsAtPath: PATH_STORE_STATE]) {
                 NSDictionary * dict = [NSKeyedUnarchiver unarchiveObjectWithFile: PATH_STORE_STATE];
-                _globalObjectStore = [dict objectForKey:@"objectStore"];
                 [self setUser: [dict objectForKey:@"user"]];
             }
             
@@ -49,8 +48,6 @@
             NSLog(@"%@", [e description]);
         }
         
-        if (!_globalObjectStore)
-            _globalObjectStore = [NSMutableDictionary dictionary];
         if (!_transactionsQueue)
             _transactionsQueue = [NSMutableArray array];
         [self performNextAction];
@@ -88,7 +85,7 @@
 - (void)updateDiskCacheDebounced
 {
     if (_user) {
-        [NSKeyedArchiver archiveRootObject:@{@"user":_user, @"objectStore":_globalObjectStore} toFile:PATH_STORE_STATE];
+        [NSKeyedArchiver archiveRootObject:@{@"user":_user} toFile:PATH_STORE_STATE];
         [NSKeyedArchiver archiveRootObject:_transactionsQueue toFile: PATH_ACTIONS_STATE];
     } else {
         [[NSFileManager defaultManager] removeItemAtPath: PATH_ACTIONS_STATE error: nil];
@@ -133,23 +130,6 @@
             failureCallback(error);
     }];
     [self.operationQueue addOperation:operation];
-}
-
-- (MModel*)globalObjectWithID:(NSString*)ID ofClass:(Class)type
-{
-    NSString * key = NSStringFromClass(type);
-    NSMutableDictionary * dict = [_globalObjectStore objectForKey: key];
-    return [dict objectForKey: ID];
-}
-
-- (void)addGlobalObject:(MModel*)model
-{
-    NSString * key = NSStringFromClass([model class]);
-
-    if (![_globalObjectStore objectForKey: key])
-        [_globalObjectStore setObject:[NSMutableDictionary dictionary] forKey:key];
-    
-    [[_globalObjectStore objectForKey: key] setObject: model forKey: [model ID]];
 }
 
 - (void)setUser:(MUser *)user

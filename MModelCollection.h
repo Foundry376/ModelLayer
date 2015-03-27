@@ -22,7 +22,6 @@
 
 @property (nonatomic, strong) NSString * collectionName;
 @property (nonatomic, assign) BOOL collectionIsNested;
-@property (nonatomic, assign) BOOL collectionObjectsGloballyUnique;
 
 @property (nonatomic, assign) Class collectionClass;
 @property (nonatomic, strong) NSObject<MRestfulObject> * parent;
