@@ -50,6 +50,8 @@
 - (void)refreshIfOld;
 - (void)refreshWithCallback:(RefreshCallbackBlock)callback;
 
+- (void)rebuildDictionaryCache;
+
 - (void)modelsFetched:(NSArray*)jsons replaceExistingContents:(BOOL)replaceExistingContents;
 - (void)modelsFetchFailed;
 
