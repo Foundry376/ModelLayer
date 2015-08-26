@@ -71,6 +71,11 @@
     return [[self createdAt] compare: [other createdAt]];
 }
 
+- (BOOL)isEqual:(id)object
+{
+	return (([object class] == [self class]) && ([[object ID] isEqualToString: [self ID]]));
+}
+
 - (BOOL)isSaved
 {
     return [self ID] != nil;
@@ -107,9 +112,13 @@
         if ([value isKindOfClass: [MModelCollection class]] || [value isKindOfClass: [MModel class]])
             return;
         
-        if ([value isKindOfClass: [NSDate class]])
-            value = [NSString stringWithDate: (NSDate*)value format: API_TIMESTAMP_FORMAT];
-        
+        if ([value isKindOfClass: [NSDate class]]) {
+			if ([[API_TIMESTAMP_FORMAT lowercaseString] isEqualToString: @"u"])
+				value = [NSString stringWithFormat: @"%.f",[(NSDate*)value timeIntervalSince1970]];
+			else
+				value = [NSString stringWithDate: (NSDate*)value format: API_TIMESTAMP_FORMAT];
+		}
+
         if ([value isKindOfClass: [NSArray class]])
             value = [value componentsJoinedByString: @","];
         
@@ -149,13 +158,22 @@
 
         } else if ([type isEqualToString: @"T@\"NSDate\""]) {
             NSString * timestamp = [json objectForKey: jsonKey];
-            if ([timestamp hasSuffix: @"Z"])
-                timestamp = [[timestamp substringToIndex:[timestamp length] - 1] stringByAppendingString:@"-0000"];
-            if ([[API_TIMESTAMP_FORMAT lowercaseString] isEqualToString: @"u"])
-				*value = [NSDate dateWithTimeIntervalSince1970: [timestamp intValue]];
-			else
-				*value = [timestamp dateValueWithFormat: API_TIMESTAMP_FORMAT];
-        
+			if ([timestamp isKindOfClass: [NSNumber class]]) {
+				timestamp = [(NSNumber*)timestamp stringValue];
+			}
+			
+			if ([timestamp isKindOfClass: [NSString class]]) {
+				if ([timestamp hasSuffix: @"Z"])
+					timestamp = [[timestamp substringToIndex:[timestamp length] - 1] stringByAppendingString:@"-0000"];
+
+				if ([[API_TIMESTAMP_FORMAT lowercaseString] isEqualToString: @"u"])
+					*value = [NSDate dateWithTimeIntervalSince1970: [timestamp intValue]];
+				else
+					*value = [timestamp dateValueWithFormat: API_TIMESTAMP_FORMAT];
+			} else {
+				*value = nil;
+			}
+			
         } else if ([type isEqualToString: @"T@\"MModelCollection\""]) {
             MModelCollection * collection = (MModelCollection *)*value;
             [collection modelsFetched:[json objectForKey: jsonKey] replaceExistingContents:YES];
